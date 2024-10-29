@@ -1,21 +1,28 @@
-<div>
-  <div *ngFor="let location of currentConditionsByZip()" class="well flex" (click)="showForecast(location.zip)">
+@if (currentConditionsByZip(); as currentConditions) {
     <div>
-      <h3>{{location.data.name}} ({{location.zip}})</h3>
-      <h4>Current conditions: {{location.data.weather[0].main}}</h4>
-      <h4>Temperatures today:</h4>
-      <p>
-        Current {{location.data.main.temp | number:'.0-0'}}
-        - Max {{location.data.main.temp_max | number:'.0-0'}}
-        - Min {{location.data.main.temp_min | number:'.0-0'}}
-      </p>
-      <p>
-        <a [routerLink]="['/forecast', location.zip]" >Show 5-day forecast for {{location.data.name}}</a>
-      </p>
+        <app-tab-system (onCloseTab)="locationService.removeLocation(currentConditions[$event].zip)"
+                        [tabs]="tabLabels()" #tabs>
+            @if (currentConditions[tabs.activeTabIndex]; as activeLocation) {
+                <div class="well flex">
+                    <div>
+                        <h3>{{ activeLocation.data.name }} ({{ activeLocation.zip }})</h3>
+                        <h4>Current conditions: {{ activeLocation.data.weather[0].main }}</h4>
+                        <h4>Temperatures today:</h4>
+                        <p>
+                            Current {{ activeLocation.data.main.temp | number:'.0-0' }}
+                            - Max {{ activeLocation.data.main.temp_max | number:'.0-0' }}
+                            - Min {{ activeLocation.data.main.temp_min | number:'.0-0' }}
+                        </p>
+                        <p>
+                            <a [routerLink]="['/forecast', activeLocation.zip]">Show 5-day forecast
+                                for {{ activeLocation.data.name }}</a>
+                        </p>
+                    </div>
+                    <div>
+                        <img [src]="weatherService.getWeatherIcon(activeLocation.data.weather[0].id)">
+                    </div>
+                </div>
+            }
+        </app-tab-system>
     </div>
-    <div>
-      <span class="close" (click)="locationService.removeLocation(location.zip)">&times;</span>
-      <img [src]="weatherService.getWeatherIcon(location.data.weather[0].id)">
-    </div>
- </div>
-</div>
+}

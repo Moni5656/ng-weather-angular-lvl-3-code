@@ -4,9 +4,9 @@ import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
 import { ZipcodeEntryComponent } from './zipcode-entry/zipcode-entry.component';
-import {LocationService} from "./location.service";
+import {LocationService} from "./shared/services/location.service";
 import { ForecastsListComponent } from './forecasts-list/forecasts-list.component';
-import {WeatherService} from "./weather.service";
+import {WeatherService} from "./shared/services/weather.service";
 import { CurrentConditionsComponent } from './current-conditions/current-conditions.component';
 import { MainPageComponent } from './main-page/main-page.component';
 import {RouterModule} from "@angular/router";
@@ -14,6 +14,7 @@ import {routing} from "./app.routing";
 import {HttpClientModule} from "@angular/common/http";
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
+import {TabSystemComponent} from './tab-system/tab-system/tab-system.component';
 
 @NgModule({
   declarations: [
@@ -23,14 +24,15 @@ import { environment } from '../environments/environment';
     CurrentConditionsComponent,
     MainPageComponent
   ],
-  imports: [
-    BrowserModule,
-    FormsModule,
-    HttpClientModule,
-    RouterModule,
-    routing,
-    ServiceWorkerModule.register('/ngsw-worker.js', { enabled: environment.production })
-  ],
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule,
+        RouterModule,
+        routing,
+        ServiceWorkerModule.register('/ngsw-worker.js', {enabled: environment.production}),
+        TabSystemComponent,
+    ],
   providers: [LocationService, WeatherService],
   bootstrap: [AppComponent]
 })

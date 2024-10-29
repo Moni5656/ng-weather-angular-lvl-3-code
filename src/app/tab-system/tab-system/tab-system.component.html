@@ -1,0 +1,16 @@
+@if (tabs.length > 0) {
+    <div class="tab-system">
+        <ul class="tab-links">
+            <li *ngFor="let tab of tabs; let i = index"
+                [class.active]="i === activeTabIndex"
+                (click)="selectTab(i)">
+                {{ tab }}
+                <span class="close" (click)="closeTab(i)">&times;</span>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <ng-content></ng-content>
+        </div>
+    </div>
+}
