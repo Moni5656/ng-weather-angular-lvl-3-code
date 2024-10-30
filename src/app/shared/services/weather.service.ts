@@ -5,7 +5,7 @@ import {HttpClient} from '@angular/common/http';
 import {CurrentConditions} from '../types/current-conditions.type';
 import {ConditionsAndZip} from '../types/conditions-and-zip.type';
 import {Forecast} from '../../forecasts-list/forecast.type';
-import {LocationService, UPDATE_ACTIONS} from './location.service';
+import {LocationService, UpdateActions} from './location.service';
 import {CachingSystemService} from './caching-system.service';
 import {tap} from 'rxjs/operators';
 
@@ -15,20 +15,24 @@ export class WeatherService {
     static URL = 'https://api.openweathermap.org/data/2.5';
     static APPID = '5a4b2d457ecbef9eb2a71e480b947604';
     static ICON_URL = 'https://raw.githubusercontent.com/udacity/Sunshine-Version-2/sunshine_master/app/src/main/res/drawable-hdpi/';
+
     private currentConditions = signal<ConditionsAndZip[]>([]);
     private locationService = inject(LocationService)
     private cachingSystemService = inject(CachingSystemService)
 
     constructor(private http: HttpClient) {
-        effect(() => {
-            const {zipcodes: updatedZipcodes, action} = this.locationService.locationUpdate();
-            const uniqueUpdatedZipCodes = new Set(updatedZipcodes)
-            action === UPDATE_ACTIONS.Add
-                ? this.addConditionsForNewZipcodes(uniqueUpdatedZipCodes)
-                : this.removeConditionsForZipcodes(updatedZipcodes);
-        }, {allowSignalWrites: true});
+        effect(() => this.handleLocationUpdates(), {allowSignalWrites: true});
     }
 
+    handleLocationUpdates() {
+        const {zipcodes: updatedZipcodes, action} = this.locationService.locationUpdate();
+        const uniqueUpdatedZipCodes = new Set(updatedZipcodes)
+        action === UpdateActions.Add
+            ? this.addConditionsForNewZipcodes(uniqueUpdatedZipCodes)
+            : this.removeConditionsForZipcodes(updatedZipcodes);
+    }
+
+    // added console logs to facilitate evaluating the caching system
     addCurrentConditions(zipcode: string): void {
         const cachedData = this.cachingSystemService.getItem<CurrentConditions>(zipcode + 'Conditions');
 
@@ -37,24 +41,23 @@ export class WeatherService {
             this.currentConditions.update(conditions => [...conditions, {zip: zipcode, data: cachedData}]);
         } else {
             console.log('No cached data found, fetching from API');
-            this.http.get<CurrentConditions>(`${WeatherService.URL}/weather?zip=${zipcode},us&units=imperial&APPID=${WeatherService.APPID}`)
-                .pipe(tap(data => {
-                    this.currentConditions.update(conditions => [...conditions, {zip: zipcode, data}]);
-                    console.log('Caching new data:', data);
-                    this.cachingSystemService.addDataToCache(zipcode + 'Conditions', data);
-                })).subscribe();
+            this.fetchAndStoreCurrentConditionsFromApi(zipcode)
         }
     }
 
-    removeCurrentConditions(zipcode: string) {
-        this.currentConditions.update(conditions => {
-            for (const index in conditions) {
-                if (conditions[index].zip === zipcode) {
-                    conditions.splice(+index, 1);
-                }
-            }
-            return conditions;
-        })
+    fetchAndStoreCurrentConditionsFromApi(zipcode: string) {
+        this.http.get<CurrentConditions>(`${WeatherService.URL}/weather?zip=${zipcode},us&units=imperial&APPID=${WeatherService.APPID}`)
+            .pipe(tap(data => {
+                this.currentConditions.update(conditions => [...conditions, {zip: zipcode, data}]);
+                console.log('Caching new data:', data);
+                this.cachingSystemService.addDataToCache(zipcode + 'Conditions', data);
+            })).subscribe();
+    }
+
+    removeCurrentConditions(zipcode: string): void {
+        this.currentConditions.update(conditions =>
+            conditions.filter(condition => condition.zip !== zipcode)
+        );
     }
 
     getCurrentConditions(): Signal<ConditionsAndZip[]> {
@@ -69,7 +72,11 @@ export class WeatherService {
             console.log('Returning cached data:', cachedData);
             return of(cachedData);
         }
+        
+        this.fetchAndStoreForecastFromApi(zipcode)
+    }
 
+    fetchAndStoreForecastFromApi(zipcode: string) {
         console.log('No cached data found, fetching from API');
         return this.http.get<Forecast>(
             `${WeatherService.URL}/forecast/daily?zip=${zipcode},us&units=imperial&cnt=5&APPID=${WeatherService.APPID}`
