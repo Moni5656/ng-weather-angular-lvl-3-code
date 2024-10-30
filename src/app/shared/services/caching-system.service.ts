@@ -25,7 +25,7 @@ export class CachingSystemService {
             data,
             expirationTime
         };
-        localStorage.setItem(key + 'Cache', JSON.stringify(cacheEntry));
+        localStorage.setItem(this.getCacheKey(key), JSON.stringify(cacheEntry));
     }
 
     getItem<T>(key: string): T | null {
@@ -53,7 +53,10 @@ export class CachingSystemService {
                 continue;
             }
 
-            this.removeItemFromCache(key);
+            const parsedEntry = JSON.parse(cacheEntry);
+            if (Date.now() > parsedEntry.expirationTime) {
+                this.removeItemFromCache(key);
+            }
         }
     }
 

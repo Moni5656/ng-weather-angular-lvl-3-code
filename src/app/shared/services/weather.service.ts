@@ -32,7 +32,7 @@ export class WeatherService {
             : this.removeConditionsForZipcodes(updatedZipcodes);
     }
 
-    // added console logs to facilitate evaluating the caching system
+    // I didn't remove the console logs to facilitate evaluating the caching system
     addCurrentConditions(zipcode: string): void {
         const cachedData = this.cachingSystemService.getItem<CurrentConditions>(zipcode + 'Conditions');
 
@@ -73,17 +73,17 @@ export class WeatherService {
             return of(cachedData);
         }
 
-        this.fetchAndStoreForecastFromApi(zipcode)
+        return this.fetchAndStoreForecastFromApi(zipcode)
     }
 
-    fetchAndStoreForecastFromApi(zipcode: string) {
+    fetchAndStoreForecastFromApi(zipcode: string): Observable<Forecast> {
         console.log('No cached data found, fetching from API');
         return this.http.get<Forecast>(
             `${WeatherService.URL}/forecast/daily?zip=${zipcode},us&units=imperial&cnt=5&APPID=${WeatherService.APPID}`
         ).pipe(
             tap(data => {
                 console.log('Caching new data:', data);
-                this.cachingSystemService.addDataToCache(zipcode + 'Forecast', data);
+                this.cachingSystemService.addDataToCache(`${zipcode}Forecast`, data);
             })
         );
     }
