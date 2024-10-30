@@ -72,7 +72,7 @@ export class WeatherService {
             console.log('Returning cached data:', cachedData);
             return of(cachedData);
         }
-        
+
         this.fetchAndStoreForecastFromApi(zipcode)
     }
 
